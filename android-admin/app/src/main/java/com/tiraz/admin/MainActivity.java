@@ -9,8 +9,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -21,13 +21,16 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 public class MainActivity extends Activity {
   private WebView web;
   private View loadingView;
   private ValueCallback<Uri[]> filePathCallback;
   private static final int FILE_CHOOSER = 1001;
-  private static final String ADMIN_URL =
-      "https://3c5-o.github.io/tiraz-store/admin/?v=20261002-7";
+  private static final String BASE_URL = "https://3c5-o.github.io/tiraz-store/admin/";
 
   @Override
   public void onCreate(Bundle state) {
@@ -171,7 +174,38 @@ public class MainActivity extends Activity {
       }
     });
 
-    web.loadUrl(ADMIN_URL);
+    loadBundledAdmin();
+  }
+
+  private void loadBundledAdmin() {
+    try {
+      InputStream stream = getAssets().open("index.html");
+      BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+      StringBuilder html = new StringBuilder();
+      String line;
+
+      while ((line = reader.readLine()) != null) {
+        html.append(line).append("\n");
+      }
+
+      reader.close();
+      stream.close();
+
+      web.loadDataWithBaseURL(
+          BASE_URL,
+          html.toString(),
+          "text/html",
+          "UTF-8",
+          null
+      );
+    } catch (Exception error) {
+      if (loadingView != null) loadingView.setVisibility(View.GONE);
+      Toast.makeText(
+          this,
+          "تعذر تشغيل ملفات إدارة طراز.",
+          Toast.LENGTH_LONG
+      ).show();
+    }
   }
 
   @Override
