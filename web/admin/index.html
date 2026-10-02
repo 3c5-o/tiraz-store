@@ -74,7 +74,7 @@
 <script>
 const URL='https://pivvmyvbgjdhphlsdttw.supabase.co',KEY='sb_publishable_31bVKfX7nE9nFrMY-LZtnw_JVTcMmDY';const sb=supabase.createClient(URL,KEY);let session=null,categories=[];
 const money=v=>new Intl.NumberFormat('ar-IQ').format(Number(v||0))+' د.ع';
-async function login(){loginMsg.textContent='جاري الدخول...';const {data,error}=await sb.auth.signInWithPassword({email:email.value,password:password.value});if(error){loginMsg.textContent=error.message;return}await enter(data.session)}
+async function login(){loginMsg.textContent='جاري الدخول...';const {data,error}=await sb.auth.signInWithPassword({email:email.value,password:password.value});if(error){loginMsg.textContent=error.message;return}await enter(data.session,true)}
 async function registerOwner(){
   loginMsg.textContent='جاري إنشاء الحساب...';
   const {data,error}=await sb.auth.signUp({email:email.value,password:password.value});
