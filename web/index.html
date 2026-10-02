@@ -143,9 +143,9 @@ function saveLocal(){localStorage.setItem('tiraz_cart',JSON.stringify(cart));loc
 function updateCartCount(){document.getElementById('cartCount').textContent=cart.reduce((a,b)=>a+b.quantity,0)}
 
 async function loadProducts(){
-  const {data,error}=await sb.from('products').select('id,name_ar,name_en,slug,description_ar,base_price,compare_at_price,gender,style,featured,brand:brands(name),category:categories(slug,name_ar),product_variants(id,name_ar,color,price_override,stock,active),product_media(id,proxy_key,media_type,sort_order,is_cover)').eq('published',true).order('sort_order').order('created_at',{ascending:false});
+  const {data,error}=await sb.rpc('list_store_products');
   if(error){console.error(error);return}
-  products=data||[];
+  products=Array.isArray(data)?data:[];
   renderProducts();
 }
 function card(p){
