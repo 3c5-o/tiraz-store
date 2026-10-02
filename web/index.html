@@ -246,8 +246,20 @@ async function trackOrder(){
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:authEmail.value,password:authPassword.value});toast(error?'تعذر تسجيل الدخول':'تم تسجيل الدخول')}
 async function signUp(){const {error}=await sb.auth.signUp({email:authEmail.value,password:authPassword.value});toast(error?'تعذر إنشاء الحساب':'تم إنشاء الحساب، تحقق من بريدك إذا طُلب')}
 async function requestNotifications(){
-  if(!('Notification'in window))return toast('المتصفح لا يدعم الإشعارات');
-  const p=await Notification.requestPermission();toast(p==='granted'?'تم تفعيل إذن الإشعارات':'لم يتم منح إذن الإشعارات');
+  if(window.OneSignalDeferred){
+    window.OneSignalDeferred.push(async function(OneSignal){
+      try{
+        const granted=await OneSignal.Notifications.requestPermission();
+        toast(granted?'تم تفعيل الإشعارات':'لم يتم منح إذن الإشعارات');
+      }catch(e){
+        toast('تعذر تفعيل الإشعارات حالياً');
+      }
+    });
+    return;
+  }
+  if(!('Notification' in window))return toast('المتصفح لا يدعم الإشعارات');
+  const p=await Notification.requestPermission();
+  toast(p==='granted'?'تم تفعيل الإشعارات':'لم يتم منح إذن الإشعارات');
 }
 async function initOneSignal(){
   try{
@@ -255,7 +267,13 @@ async function initOneSignal(){
     const id=data?.value?.app_id;if(!id)return;
     window.OneSignalDeferred=window.OneSignalDeferred||[];
     const s=document.createElement('script');s.src='https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';s.defer=true;document.head.appendChild(s);
-    OneSignalDeferred.push(async function(OneSignal){await OneSignal.init({appId:id});});
+    OneSignalDeferred.push(async function(OneSignal){
+      await OneSignal.init({
+        appId:id,
+        serviceWorkerParam:{scope:'/tiraz-store/onesignal/'},
+        serviceWorkerPath:'/tiraz-store/onesignal/OneSignalSDKWorker.js'
+      });
+    });
   }catch(e){}
 }
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
