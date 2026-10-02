@@ -141,7 +141,7 @@ main{padding:14px}.hero{background:radial-gradient(circle at 15% 20%,#d9c09a55,t
 const SUPABASE_URL='https://pivvmyvbgjdhphlsdttw.supabase.co';
 const SUPABASE_KEY='sb_publishable_31bVKfX7nE9nFrMY-LZtnw_JVTcMmDY';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let products=[],activeFilter='all',selectedProduct=null,selectedVariant=null;
+let products=[],boxes=[],activeFilter='all',selectedProduct=null,selectedVariant=null,selectedBox=null;
 let cart=JSON.parse(localStorage.getItem('tiraz_cart')||'[]');
 let favorites=new Set(JSON.parse(localStorage.getItem('tiraz_favs')||'[]'));
 
@@ -155,9 +155,14 @@ function saveLocal(){localStorage.setItem('tiraz_cart',JSON.stringify(cart));loc
 function updateCartCount(){document.getElementById('cartCount').textContent=cart.reduce((a,b)=>a+b.quantity,0)}
 
 async function loadProducts(){
-  const {data,error}=await sb.rpc('list_store_products');
+  const [{data,error},{data:boxData,error:boxError}]=await Promise.all([
+    sb.rpc('list_store_products'),
+    sb.rpc('list_active_boxes')
+  ]);
   if(error){console.error(error);return}
+  if(boxError)console.error(boxError);
   products=Array.isArray(data)?data:[];
+  boxes=Array.isArray(boxData)?boxData:[];
   renderProducts();
 }
 function card(p){
@@ -206,6 +211,7 @@ document.querySelectorAll('#filterChips .chip').forEach(b=>b.onclick=()=>{active
 function openProduct(id){
   selectedProduct=products.find(p=>p.id===id); if(!selectedProduct)return;
   selectedVariant=(selectedProduct.product_variants||[]).find(v=>v.active&&v.stock>0)||null;
+  selectedBox=null;
   const img=mediaUrl(selectedProduct);
   const vars=(selectedProduct.product_variants||[]).filter(v=>v.active).map(v=>`<button class="chip ${selectedVariant?.id===v.id?'selected':''}" onclick="selectVariant('${v.id}')">${v.name_ar}${v.stock<=0?' — نفد':''}</button>`).join('');
   document.getElementById('productSheet').innerHTML=`
@@ -216,21 +222,39 @@ function openProduct(id){
   <div class="price" id="detailPrice" style="font-size:20px">${money(selectedVariant?.price_override??selectedProduct.base_price)}</div>
   <p style="color:var(--muted);line-height:1.9">${selectedProduct.description_ar||'قطعة مختارة بعناية ضمن تشكيلة طِراز.'}</p>
   ${vars?'<div class="field"><label>اللون / الخيار</label><div class="chips" id="variantChips">'+vars+'</div></div>':''}
+  ${boxes.length?'<div class="field"><label>العلبة - اختياري</label><div class="chips"><button class="chip selected" id="boxNone" onclick="selectBox(null)">بدون علبة</button>'+boxes.filter(b=>b.stock>0).map(b=>'<button class="chip" data-box="'+b.id+'" onclick="selectBox(\''+b.id+'\')">'+b.name_ar+' • '+money(b.price)+'</button>').join('')+'</div></div>':''}
   <div class="actions"><button class="primary" onclick="addToCart()">إضافة للسلة</button><button class="secondary" onclick="toggleFav('${selectedProduct.id}');closeModal('productModal')">المفضلة</button></div>`;
   document.getElementById('productModal').classList.add('open');lucide.createIcons()
 }
 function selectVariant(id){selectedVariant=selectedProduct.product_variants.find(v=>v.id===id);openProduct(selectedProduct.id)}
+function selectBox(id){
+  selectedBox=id?boxes.find(b=>b.id===id):null;
+  document.querySelectorAll('[data-box]').forEach(x=>x.classList.toggle('selected',x.dataset.box===id));
+  const none=document.getElementById('boxNone');if(none)none.classList.toggle('selected',!id);
+}
 function addToCart(){
   if(selectedProduct.product_variants?.length && (!selectedVariant||selectedVariant.stock<=0)){toast('هذا الخيار غير متوفر');return}
-  const key=selectedProduct.id+'|'+(selectedVariant?.id||'');
+  const key=selectedProduct.id+'|'+(selectedVariant?.id||'')+'|'+(selectedBox?.id||'');
   const ex=cart.find(x=>x.key===key);
-  if(ex)ex.quantity++; else cart.push({key,product_id:selectedProduct.id,variant_id:selectedVariant?.id||null,quantity:1,name:selectedProduct.name_ar,variant:selectedVariant?.name_ar||'',price:selectedVariant?.price_override??selectedProduct.base_price,img:mediaUrl(selectedProduct)});
+  if(ex)ex.quantity++; else cart.push({
+    key,
+    product_id:selectedProduct.id,
+    variant_id:selectedVariant?.id||null,
+    box_id:selectedBox?.id||null,
+    box_name:selectedBox?.name_ar||'',
+    box_price:Number(selectedBox?.price||0),
+    quantity:1,
+    name:selectedProduct.name_ar,
+    variant:selectedVariant?.name_ar||'',
+    price:selectedVariant?.price_override??selectedProduct.base_price,
+    img:mediaUrl(selectedProduct)
+  });
   saveLocal();closeModal('productModal');toast('تمت الإضافة للسلة')
 }
 function renderCart(){
   const e=document.getElementById('cartItems');
-  e.innerHTML=cart.length?cart.map((x,i)=>`<div class="cartitem"><div class="thumb">${x.img?`<img src="${x.img}">`:''}</div><div><b>${x.name}</b><div style="font-size:11px;color:var(--muted)">${x.variant}</div><div class="price">${money(x.price)} × ${x.quantity}</div></div><button class="close" onclick="removeCart(${i})">×</button></div>`).join(''):'<div class="empty">السلة فارغة.</div>';
-  document.getElementById('cartTotal').textContent=money(cart.reduce((s,x)=>s+x.price*x.quantity,0));
+  e.innerHTML=cart.length?cart.map((x,i)=>`<div class="cartitem"><div class="thumb">${x.img?`<img src="${x.img}">`:''}</div><div><b>${x.name}</b><div style="font-size:11px;color:var(--muted)">${x.variant}${x.box_name?' • '+x.box_name:''}</div><div class="price">${money(x.price)} × ${x.quantity}${x.box_price?' + '+money(x.box_price):''}</div></div><button class="close" onclick="removeCart(${i})">×</button></div>`).join(''):'<div class="empty">السلة فارغة.</div>';
+  document.getElementById('cartTotal').textContent=money(cart.reduce((s,x)=>s+(x.price*x.quantity)+Number(x.box_price||0),0));
 }
 function removeCart(i){cart.splice(i,1);saveLocal();renderCart()}
 document.getElementById('cartBtn').onclick=()=>{renderCart();document.getElementById('cartModal').classList.add('open')}
@@ -240,7 +264,7 @@ async function placeOrder(){
   const btn=document.getElementById('placeOrderBtn');btn.disabled=true;btn.textContent='جاري إنشاء الطلب...';
   const customer={customer_name:coName.value.trim(),phone:coPhone.value.trim(),alt_phone:coAlt.value.trim(),province:coProvince.value.trim(),area:coArea.value.trim(),landmark:coLandmark.value.trim(),address:coAddress.value.trim()};
   if(!customer.customer_name||!customer.phone||!customer.province||!customer.area){toast('أكمل الحقول المطلوبة');btn.disabled=false;btn.textContent='تأكيد الطلب';return}
-  const items=cart.map(x=>({product_id:x.product_id,variant_id:x.variant_id,quantity:x.quantity}));
+  const items=cart.map(x=>({product_id:x.product_id,variant_id:x.variant_id,box_id:x.box_id||null,quantity:x.quantity}));
   const response=await fetch(SUPABASE_URL+'/functions/v1/create-order',{
     method:'POST',
     headers:{'Content-Type':'application/json',apikey:SUPABASE_KEY},
