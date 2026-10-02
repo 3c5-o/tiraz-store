@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#17100d"/><title>طِراز | الإدارة</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://unpkg.com/lucide@latest"></script>
+
 <style>
 :root{--bg:#f1ebe2;--surface:#fffaf2;--ink:#231812;--muted:#807165;--dark:#1b120e;--brown:#5d3929;--gold:#b99558;--line:#e1d5c4;--red:#8b3030}*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}.shell{max-width:980px;margin:auto;min-height:100vh}.top{position:sticky;top:0;z-index:40;background:#1b120ef2;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}.brand b{color:#d5b574;font-size:22px}.brand small{display:block;color:#b9a896}.logout{border:1px solid #b99558;background:transparent;color:#e0c28b;padding:8px 12px;border-radius:12px}.login{max-width:430px;margin:7vh auto;background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:24px;box-shadow:0 20px 60px #28170e22}.login-brand{text-align:center;margin-bottom:18px}.login-brand img{width:96px;height:96px;border-radius:28px;object-fit:cover;border:2px solid var(--gold);box-shadow:0 12px 30px #28170e33}.login-brand h1{margin:12px 0 3px}.login-brand small{color:var(--muted);letter-spacing:1.2px}.field{margin:12px 0}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:white;border-radius:13px;padding:12px;outline:0}.primary{border:0;background:linear-gradient(135deg,#d0b177,#ad884d);color:#1b120e;padding:12px 16px;border-radius:13px;font-weight:900}.secondary{border:1px solid var(--gold);background:transparent;color:var(--brown);padding:11px 15px;border-radius:13px;font-weight:800}.main{display:none}.tabs{display:flex;gap:7px;overflow:auto;padding:12px;background:#231711}.tab{white-space:nowrap;border:0;background:#ffffff0e;color:#cbbcad;padding:9px 13px;border-radius:12px}.tab.active{background:#d1b374;color:#1b120e;font-weight:bold}.content{padding:15px}.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:var(--surface);border:1px solid var(--line);padding:15px;border-radius:18px}.stat b{font-size:24px;display:block;margin-top:7px}.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:15px;margin:12px 0}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.table{overflow:auto}.table table{width:100%;border-collapse:collapse;min-width:650px}.table th,.table td{text-align:right;padding:10px;border-bottom:1px solid var(--line);font-size:13px}.status{padding:5px 9px;border-radius:999px;background:#eadfc9;font-size:11px}.forms{display:grid;grid-template-columns:1fr 1fr;gap:10px}.span2{grid-column:1/-1}.notice{padding:13px;border-radius:15px;background:#fff1cf;border:1px solid #dfc88b;color:#6a4b20}.danger{color:var(--red)}.uploadbox{border:1px dashed var(--gold);padding:12px;border-radius:14px}.small{font-size:11px;color:var(--muted)}.admin-modal{position:fixed;inset:0;background:#140d0acc;display:none;align-items:flex-end;justify-content:center;z-index:100}.admin-modal.open{display:flex}.admin-sheet{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--bg);border-radius:26px 26px 0 0;padding:18px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.detail-box{background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px}.order-item{display:grid;grid-template-columns:1fr auto;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)}.timeline{border-right:2px solid var(--gold);padding-right:13px}.timeline div{position:relative;padding:4px 0 12px}.timeline div:before{content:"";position:absolute;right:-19px;top:8px;width:9px;height:9px;background:var(--gold);border-radius:50%}.store-preview{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:16px;background:#fff}.store-preview img{width:68px;height:68px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}.checkrow{display:flex;align-items:center;gap:8px;margin-top:10px}.checkrow input{width:auto}@media(max-width:720px){.grid{grid-template-columns:1fr 1fr}.forms{grid-template-columns:1fr}.span2{grid-column:auto}}
 </style></head><body>
@@ -15,8 +15,8 @@
   <p style="color:var(--muted);text-align:center">الدخول مخصص لحسابات الإدارة.</p>
   <div class="field"><label>البريد</label><input id="email" type="email"/></div>
   <div class="field"><label>كلمة المرور</label><input id="password" type="password"/></div>
-  <button class="primary" style="width:100%" onclick="login()">تسجيل الدخول</button>
-  <button class="secondary" style="width:100%;margin-top:8px" onclick="registerOwner()">إنشاء أول حساب إدارة</button>
+  <button class="primary" id="loginBtn" type="button" style="width:100%">تسجيل الدخول</button>
+  <button class="secondary" id="registerBtn" type="button" style="width:100%;margin-top:8px">إنشاء أول حساب إدارة</button>
   <p class="small">عند أول تشغيل فقط، أول حساب موثّق يمكنه تفعيل نفسه كمالك للنظام. بعد إنشاء المالك يتوقف هذا التفعيل تلقائياً.</p>
   <div id="loginMsg" class="small"></div>
 </div>
@@ -110,8 +110,157 @@
 </div>
 
 <script>
-const URL='https://pivvmyvbgjdhphlsdttw.supabase.co',KEY='sb_publishable_31bVKfX7nE9nFrMY-LZtnw_JVTcMmDY';
-const sb=supabase.createClient(URL,KEY);
+const URL='https://pivvmyvbgjdhphlsdttw.supabase.co';
+const KEY='sb_publishable_31bVKfX7nE9nFrMY-LZtnw_JVTcMmDY';
+
+function createStoreClient(baseUrl, apiKey){
+  const SESSION_KEY='tiraz_admin_session_v2';
+
+  function readSession(){
+    try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{return null}
+  }
+  function writeSession(s){
+    if(s)localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+    else localStorage.removeItem(SESSION_KEY);
+  }
+  function normalizeAuth(raw){
+    if(!raw?.access_token)return null;
+    return {
+      access_token:raw.access_token,
+      refresh_token:raw.refresh_token,
+      token_type:raw.token_type||'bearer',
+      expires_in:raw.expires_in||3600,
+      expires_at:raw.expires_at||Math.floor(Date.now()/1000)+(raw.expires_in||3600),
+      user:raw.user
+    };
+  }
+  async function refreshSessionIfNeeded(){
+    let s=readSession();
+    if(!s)return null;
+    if((s.expires_at||0)>Math.floor(Date.now()/1000)+90)return s;
+    if(!s.refresh_token){writeSession(null);return null}
+    try{
+      const r=await fetch(baseUrl+'/auth/v1/token?grant_type=refresh_token',{
+        method:'POST',
+        headers:{apikey:apiKey,'Content-Type':'application/json'},
+        body:JSON.stringify({refresh_token:s.refresh_token})
+      });
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){writeSession(null);return null}
+      s=normalizeAuth(j);writeSession(s);return s;
+    }catch{return s}
+  }
+  async function headers(extra={}){
+    const s=await refreshSessionIfNeeded();
+    return {
+      apikey:apiKey,
+      Authorization:'Bearer '+(s?.access_token||apiKey),
+      ...extra
+    };
+  }
+
+  class Query {
+    constructor(table){
+      this.table=table;this.method='GET';this.params=new URLSearchParams();
+      this.body=null;this.returning=false;this.singleMode=null;this.head=false;this.count=null;
+      this.extraHeaders={};
+    }
+    select(cols='*',opts={}){
+      this.params.set('select',cols);
+      if(this.method==='GET'&&opts.head)this.head=true;
+      if(opts.count)this.count=opts.count;
+      if(this.method!=='GET')this.returning=true;
+      return this;
+    }
+    insert(payload){this.method='POST';this.body=payload;return this}
+    update(payload){this.method='PATCH';this.body=payload;return this}
+    upsert(payload){this.method='POST';this.body=payload;this.extraHeaders.Prefer='resolution=merge-duplicates';return this}
+    delete(){this.method='DELETE';return this}
+    eq(k,v){this.params.append(k,'eq.'+v);return this}
+    in(k,arr){this.params.append(k,'in.('+arr.map(v=>String(v).replace(/,/g,'\\,')).join(',')+')');return this}
+    order(k,opt={}){this.params.append('order',k+'.'+(opt.ascending===false?'desc':'asc'));return this}
+    limit(n){this.params.set('limit',String(n));return this}
+    maybeSingle(){this.singleMode='maybe';return this.execute()}
+    single(){this.singleMode='single';return this.execute()}
+    async execute(){
+      const h=await headers({'Content-Type':'application/json',...this.extraHeaders});
+      let prefer=[];
+      if(this.returning)prefer.push('return=representation');
+      if(this.count)prefer.push('count='+this.count);
+      if(prefer.length)h.Prefer=[h.Prefer,prefer.join(',')].filter(Boolean).join(',');
+      if(this.singleMode)h.Accept='application/vnd.pgrst.object+json';
+      const qs=this.params.toString();
+      let r;
+      try{
+        r=await fetch(baseUrl+'/rest/v1/'+this.table+(qs?'?'+qs:''),{
+          method:this.head?'HEAD':this.method,
+          headers:h,
+          body:this.body==null?undefined:JSON.stringify(this.body)
+        });
+      }catch(e){
+        return {data:null,error:{message:'تعذر الاتصال بالخادم'},count:null};
+      }
+      let data=null;
+      if(!this.head && r.status!==204){
+        const text=await r.text();
+        if(text){try{data=JSON.parse(text)}catch{data=text}}
+      }
+      let count=null;
+      const range=r.headers.get('content-range');
+      if(range&&range.includes('/')){const n=range.split('/').pop();count=n==='*'?null:Number(n)}
+      if(!r.ok){
+        if(this.singleMode==='maybe'&&r.status===406)return {data:null,error:null,count};
+        return {data:null,error:{message:data?.message||data?.error_description||data?.hint||('HTTP '+r.status),status:r.status},count};
+      }
+      return {data,error:null,count};
+    }
+    then(resolve,reject){return this.execute().then(resolve,reject)}
+  }
+
+  const auth={
+    async signInWithPassword({email,password}){
+      try{
+        const r=await fetch(baseUrl+'/auth/v1/token?grant_type=password',{
+          method:'POST',
+          headers:{apikey:apiKey,'Content-Type':'application/json'},
+          body:JSON.stringify({email,password})
+        });
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok)return {data:{session:null,user:null},error:{message:j.error_description||j.msg||j.message||'Invalid login credentials'}};
+        const s=normalizeAuth(j);writeSession(s);
+        return {data:{session:s,user:s?.user||null},error:null};
+      }catch{return {data:{session:null,user:null},error:{message:'تعذر الاتصال بالخادم'}}}
+    },
+    async signOut(){
+      const s=readSession();
+      try{
+        if(s?.access_token)await fetch(baseUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:apiKey,Authorization:'Bearer '+s.access_token}});
+      }catch{}
+      writeSession(null);return {error:null}
+    },
+    async getSession(){
+      const s=await refreshSessionIfNeeded();
+      return {data:{session:s},error:null};
+    }
+  };
+
+  return {
+    auth,
+    from(table){return new Query(table)},
+    async rpc(name,args={}){
+      const h=await headers({'Content-Type':'application/json'});
+      try{
+        const r=await fetch(baseUrl+'/rest/v1/rpc/'+name,{method:'POST',headers:h,body:JSON.stringify(args)});
+        const text=await r.text();let data=null;
+        if(text){try{data=JSON.parse(text)}catch{data=text}}
+        if(!r.ok)return {data:null,error:{message:data?.message||data?.hint||('HTTP '+r.status),status:r.status}};
+        return {data,error:null};
+      }catch{return {data:null,error:{message:'تعذر الاتصال بالخادم'}}}
+    }
+  };
+}
+
+const sb=createStoreClient(URL,KEY);
 let session=null,categories=[];
 const $=id=>document.getElementById(id);
 const email=$('email'),password=$('password'),loginMsg=$('loginMsg'),loginScreen=$('loginScreen'),mainApp=$('mainApp');
@@ -178,11 +327,15 @@ async function enter(s){
   await init();
 }
 async function logout(){await sb.auth.signOut();location.reload()}
+$('loginBtn').addEventListener('click',login);
+$('registerBtn').addEventListener('click',registerOwner);
+password.addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+email.addEventListener('keydown',e=>{if(e.key==='Enter')password.focus()});
 sb.auth.getSession().then(({data})=>{if(data.session)enter(data.session)});
 
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab+'Panel').classList.add('active')});
 function slugify(s){return s.toLowerCase().trim().replace(/\s+/g,'-').replace(/[^\p{L}\p{N}-]+/gu,'')+'-'+Date.now().toString(36)}
-async function init(){const {data:c}=await sb.from('categories').select('*').order('sort_order');categories=c||[];pCategory.innerHTML=categories.map(x=>'<option value="'+x.id+'">'+x.name_ar+'</option>').join('');await Promise.all([loadDashboard(),loadProducts(),loadOrders(),loadInventory(),loadBoxes(),loadIntegrations(),loadSettings()]);lucide.createIcons()}
+async function init(){const {data:c}=await sb.from('categories').select('*').order('sort_order');categories=c||[];pCategory.innerHTML=categories.map(x=>'<option value="'+x.id+'">'+x.name_ar+'</option>').join('');await Promise.all([loadDashboard(),loadProducts(),loadOrders(),loadInventory(),loadBoxes(),loadIntegrations(),loadSettings()]);}
 async function loadDashboard(){const [{count:pc},{count:oc},{data:low},{data:sales}]=await Promise.all([sb.from('products').select('*',{count:'exact',head:true}),sb.from('orders').select('*',{count:'exact',head:true}).eq('status','new'),sb.from('product_variants').select('id,stock,low_stock_limit').eq('active',true),sb.from('orders').select('total').eq('status','delivered')]);sProducts.textContent=pc||0;sOrders.textContent=oc||0;sLow.textContent=(low||[]).filter(x=>x.stock<=x.low_stock_limit).length;sSales.textContent=money((sales||[]).reduce((s,x)=>s+Number(x.total),0));const {data:r}=await sb.from('orders').select('order_number,customer_name,total,status').order('created_at',{ascending:false}).limit(5);recentOrders.innerHTML=(r||[]).map(x=>'<div class="row" style="padding:9px 0;border-bottom:1px solid var(--line)"><span><b>'+x.order_number+'</b><br><small>'+x.customer_name+'</small></span><span>'+money(x.total)+'</span></div>').join('')||'<div class="small">لا توجد طلبات بعد.</div>'}
 function toggleProductForm(){productForm.style.display=productForm.style.display==='none'?'block':'none'}
 async function ensureBrand(name){if(!name.trim())return null;const slug=slugify(name).replace(/-[^-]+$/,'');let {data}=await sb.from('brands').select('id').eq('name',name.trim()).maybeSingle();if(data)return data.id;const r=await sb.from('brands').insert({name:name.trim(),slug}).select('id').single();return r.data?.id||null}
