@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#17100d"/><title>طِراز | الإدارة</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root{--bg:#f1ebe2;--surface:#fffaf2;--ink:#231812;--muted:#807165;--dark:#1b120e;--brown:#5d3929;--gold:#b99558;--line:#e1d5c4;--red:#8b3030}*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}.shell{max-width:980px;margin:auto;min-height:100vh}.top{position:sticky;top:0;z-index:40;background:#1b120ef2;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}.brand b{color:#d5b574;font-size:22px}.brand small{display:block;color:#b9a896}.logout{border:1px solid #b99558;background:transparent;color:#e0c28b;padding:8px 12px;border-radius:12px}.login{max-width:430px;margin:12vh auto;background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:24px;box-shadow:0 20px 60px #28170e22}.field{margin:12px 0}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:white;border-radius:13px;padding:12px;outline:0}.primary{border:0;background:linear-gradient(135deg,#d0b177,#ad884d);color:#1b120e;padding:12px 16px;border-radius:13px;font-weight:900}.secondary{border:1px solid var(--gold);background:transparent;color:var(--brown);padding:11px 15px;border-radius:13px;font-weight:800}.main{display:none}.tabs{display:flex;gap:7px;overflow:auto;padding:12px;background:#231711}.tab{white-space:nowrap;border:0;background:#ffffff0e;color:#cbbcad;padding:9px 13px;border-radius:12px}.tab.active{background:#d1b374;color:#1b120e;font-weight:bold}.content{padding:15px}.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:var(--surface);border:1px solid var(--line);padding:15px;border-radius:18px}.stat b{font-size:24px;display:block;margin-top:7px}.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:15px;margin:12px 0}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.table{overflow:auto}.table table{width:100%;border-collapse:collapse;min-width:650px}.table th,.table td{text-align:right;padding:10px;border-bottom:1px solid var(--line);font-size:13px}.status{padding:5px 9px;border-radius:999px;background:#eadfc9;font-size:11px}.forms{display:grid;grid-template-columns:1fr 1fr;gap:10px}.span2{grid-column:1/-1}.notice{padding:13px;border-radius:15px;background:#fff1cf;border:1px solid #dfc88b;color:#6a4b20}.danger{color:var(--red)}.uploadbox{border:1px dashed var(--gold);padding:12px;border-radius:14px}.small{font-size:11px;color:var(--muted)}@media(max-width:720px){.grid{grid-template-columns:1fr 1fr}.forms{grid-template-columns:1fr}.span2{grid-column:auto}}
+</style></head><body>
+<div id="loginScreen" class="login">
+  <h1>إدارة طِراز</h1><p style="color:var(--muted)">الدخول مخصص لحسابات الإدارة.</p>
+  <div class="field"><label>البريد</label><input id="email" type="email"/></div>
+  <div class="field"><label>كلمة المرور</label><input id="password" type="password"/></div>
+  <button class="primary" style="width:100%" onclick="login()">تسجيل الدخول</button>
+  <p class="small">إذا كان هذا أول حساب إدارة، أنشئ الحساب من Supabase Auth ثم أضف UUID إلى admin_users.</p>
+  <div id="loginMsg" class="small"></div>
+</div>
+
+<div class="main" id="mainApp">
+<header class="top"><div class="brand"><b>طِراز</b><small>ADMIN PANEL</small></div><button class="logout" onclick="logout()">خروج</button></header>
+<div class="tabs">
+<button class="tab active" data-tab="dashboard">الرئيسية</button><button class="tab" data-tab="products">المنتجات</button><button class="tab" data-tab="orders">الطلبات</button><button class="tab" data-tab="inventory">المخزون</button><button class="tab" data-tab="integrations">الربط والتخزين</button><button class="tab" data-tab="settings">الإعدادات</button>
+</div>
+<div class="content">
+<section class="panel active" id="dashboardPanel"><div class="grid"><div class="stat">المنتجات<b id="sProducts">0</b></div><div class="stat">الطلبات الجديدة<b id="sOrders">0</b></div><div class="stat">مخزون منخفض<b id="sLow">0</b></div><div class="stat">المبيعات<b id="sSales">0 د.ع</b></div></div><div class="card"><h3>آخر الطلبات</h3><div id="recentOrders"></div></div></section>
+
+<section class="panel" id="productsPanel">
+<div class="row"><h2>المنتجات</h2><button class="primary" onclick="toggleProductForm()">إضافة منتج</button></div>
+<div class="card" id="productForm" style="display:none"><h3>منتج جديد</h3><div class="forms">
+<div class="field"><label>اسم المنتج *</label><input id="pName"/></div><div class="field"><label>الاسم الإنجليزي</label><input id="pNameEn"/></div>
+<div class="field"><label>السعر بالدينار العراقي *</label><input id="pPrice" type="number"/></div><div class="field"><label>الماركة</label><input id="pBrand" placeholder="LONGINES / CASIO"/></div>
+<div class="field"><label>القسم</label><select id="pCategory"></select></div><div class="field"><label>النوع</label><select id="pGender"><option value="men">رجالي</option><option value="women">نسائي</option><option value="unisex">مشترك</option></select></div>
+<div class="field"><label>الستايل</label><select id="pStyle"><option value="classic">كلاسيكي</option><option value="vintage">Vintage</option><option value="modern">عصري</option></select></div><div class="field"><label>اللون / الخيار</label><input id="vName" placeholder="فضي × أزرق"/></div>
+<div class="field"><label>المخزون</label><input id="vStock" type="number" value="1"/></div><div class="field"><label>SKU</label><input id="vSku"/></div>
+<div class="field span2"><label>الوصف</label><textarea id="pDesc" rows="3"></textarea></div>
+<div class="field span2 uploadbox"><label>صور / فيديو المنتج</label><input id="pFiles" type="file" multiple accept="image/*,video/*"/><div class="small">يتم رفع الوسائط إلى Telegram بعد ربط البوت والقنوات.</div></div>
+</div><button class="primary" onclick="createProduct()">حفظ ونشر المنتج</button></div>
+<div id="productsList"></div>
+</section>
+
+<section class="panel" id="ordersPanel"><div class="row"><h2>الطلبات</h2><button class="secondary" onclick="loadOrders()">تحديث</button></div><div class="table card"><table><thead><tr><th>الطلب</th><th>الزبون</th><th>الهاتف</th><th>الإجمالي</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="ordersBody"></tbody></table></div></section>
+
+<section class="panel" id="inventoryPanel"><h2>المخزون</h2><div id="inventoryList"></div></section>
+
+<section class="panel" id="integrationsPanel"><h2>الربط والتخزين</h2><div class="notice">Telegram يستخدم لتخزين الوسائط فقط. الأسعار والطلبات والمخزون تبقى في قاعدة البيانات.</div><div class="card">
+<div class="field"><label>Bot Token</label><input id="botToken" type="password" placeholder="أدخل التوكن عند التغيير فقط"/></div>
+<div id="channels"></div><button class="primary" onclick="saveIntegrations()">حفظ الربط</button><span id="botState" class="small"></span>
+</div></section>
+
+<section class="panel" id="settingsPanel"><h2>إعدادات المتجر</h2><div class="card"><div class="field"><label>OneSignal App ID</label><input id="oneSignalId" placeholder="اختياري حالياً"/></div><div class="field"><label>سعر التوصيل الافتراضي (د.ع)</label><input id="deliveryFee" type="number" value="0"/></div><button class="primary" onclick="saveSettings()">حفظ</button></div></section>
+</div></div>
+
+<script>
+const URL='https://pivvmyvbgjdhphlsdttw.supabase.co',KEY='sb_publishable_31bVKfX7nE9nFrMY-LZtnw_JVTcMmDY';const sb=supabase.createClient(URL,KEY);let session=null,categories=[];
+const money=v=>new Intl.NumberFormat('ar-IQ').format(Number(v||0))+' د.ع';
+async function login(){loginMsg.textContent='جاري الدخول...';const {data,error}=await sb.auth.signInWithPassword({email:email.value,password:password.value});if(error){loginMsg.textContent=error.message;return}await enter(data.session)}
+async function enter(s){session=s;const {data:a}=await sb.from('admin_users').select('role,active').eq('user_id',s.user.id).eq('active',true).maybeSingle();if(!a){loginMsg.innerHTML='هذا الحساب غير مفعّل كإدارة.<br>UUID: <b>'+s.user.id+'</b>';await sb.auth.signOut();return}loginScreen.style.display='none';mainApp.style.display='block';await init()}
+async function logout(){await sb.auth.signOut();location.reload()}
+sb.auth.getSession().then(({data})=>{if(data.session)enter(data.session)});
+
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab+'Panel').classList.add('active')});
+function slugify(s){return s.toLowerCase().trim().replace(/\s+/g,'-').replace(/[^\p{L}\p{N}-]+/gu,'')+'-'+Date.now().toString(36)}
+async function init(){const {data:c}=await sb.from('categories').select('*').order('sort_order');categories=c||[];pCategory.innerHTML=categories.map(x=>'<option value="'+x.id+'">'+x.name_ar+'</option>').join('');await Promise.all([loadDashboard(),loadProducts(),loadOrders(),loadInventory(),loadIntegrations(),loadSettings()]);lucide.createIcons()}
+async function loadDashboard(){const [{count:pc},{count:oc},{data:low},{data:sales}]=await Promise.all([sb.from('products').select('*',{count:'exact',head:true}),sb.from('orders').select('*',{count:'exact',head:true}).eq('status','new'),sb.from('product_variants').select('id,stock,low_stock_limit').eq('active',true),sb.from('orders').select('total').eq('status','delivered')]);sProducts.textContent=pc||0;sOrders.textContent=oc||0;sLow.textContent=(low||[]).filter(x=>x.stock<=x.low_stock_limit).length;sSales.textContent=money((sales||[]).reduce((s,x)=>s+Number(x.total),0));const {data:r}=await sb.from('orders').select('order_number,customer_name,total,status').order('created_at',{ascending:false}).limit(5);recentOrders.innerHTML=(r||[]).map(x=>'<div class="row" style="padding:9px 0;border-bottom:1px solid var(--line)"><span><b>'+x.order_number+'</b><br><small>'+x.customer_name+'</small></span><span>'+money(x.total)+'</span></div>').join('')||'<div class="small">لا توجد طلبات بعد.</div>'}
+function toggleProductForm(){productForm.style.display=productForm.style.display==='none'?'block':'none'}
+async function ensureBrand(name){if(!name.trim())return null;const slug=slugify(name).replace(/-[^-]+$/,'');let {data}=await sb.from('brands').select('id').eq('name',name.trim()).maybeSingle();if(data)return data.id;const r=await sb.from('brands').insert({name:name.trim(),slug}).select('id').single();return r.data?.id||null}
+async function createProduct(){
+  if(!pName.value.trim()||!pPrice.value)return alert('أدخل الاسم والسعر');
+  const brandId=await ensureBrand(pBrand.value);const {data:p,error}=await sb.from('products').insert({name_ar:pName.value.trim(),name_en:pNameEn.value.trim()||null,slug:slugify(pName.value),brand_id:brandId,category_id:pCategory.value,gender:pGender.value,style:pStyle.value,description_ar:pDesc.value.trim()||null,base_price:Number(pPrice.value),currency:'IQD',published:true}).select('*').single();if(error)return alert(error.message);
+  const {data:v,error:ve}=await sb.from('product_variants').insert({product_id:p.id,name_ar:vName.value.trim()||'الافتراضي',color:vName.value.trim()||null,sku:vSku.value.trim()||null,stock:Number(vStock.value||0),active:true}).select('*').single();if(ve)return alert(ve.message);
+  const files=[...pFiles.files];for(const f of files)await uploadMedia(f,f.type.startsWith('video/')?'product_videos':'product_images',p.id,v.id);
+  alert('تمت إضافة المنتج');productForm.style.display='none';document.querySelectorAll('#productForm input,#productForm textarea').forEach(x=>{if(x.type!=='number')x.value=''});await Promise.all([loadProducts(),loadInventory(),loadDashboard()]);
+}
+async function uploadMedia(file,purpose,productId,variantId){const fd=new FormData();fd.append('file',file);fd.append('purpose',purpose);fd.append('product_id',productId);fd.append('variant_id',variantId||'');const r=await fetch(URL+'/functions/v1/telegram-upload',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,apikey:KEY},body:fd});if(!r.ok){const j=await r.json().catch(()=>({}));alert('تعذر رفع '+file.name+': '+(j.error||r.status))}}
+async function loadProducts(){const {data}=await sb.from('products').select('id,name_ar,base_price,published,brand:brands(name),product_variants(id,name_ar,stock)').order('created_at',{ascending:false});productsList.innerHTML=(data||[]).map(p=>'<div class="card row"><div><b>'+p.name_ar+'</b><div class="small">'+(p.brand?.name||'')+' — '+money(p.base_price)+'</div></div><div><span class="status">'+(p.published?'منشور':'مخفي')+'</span></div></div>').join('')||'<div class="card small">لا توجد منتجات.</div>'}
+async function loadInventory(){const {data}=await sb.from('product_variants').select('id,name_ar,stock,low_stock_limit,product:products(name_ar)').order('stock');inventoryList.innerHTML=(data||[]).map(v=>'<div class="card row"><div><b>'+v.product?.name_ar+'</b><div class="small">'+v.name_ar+'</div></div><b class="'+(v.stock<=v.low_stock_limit?'danger':'')+'">'+v.stock+'</b></div>').join('')||'<div class="card small">لا يوجد مخزون بعد.</div>'}
+const labels={new:'جديد',confirmed:'مؤكد',preparing:'تجهيز',shipped:'مشحون',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض'};
+async function loadOrders(){const {data}=await sb.from('orders').select('*').order('created_at',{ascending:false});ordersBody.innerHTML=(data||[]).map(o=>'<tr><td><b>'+o.order_number+'</b><br><small>'+new Date(o.created_at).toLocaleString('ar-IQ')+'</small></td><td>'+o.customer_name+'<br><small>'+o.province+' / '+o.area+'</small></td><td>'+o.phone+'</td><td>'+money(o.total)+'</td><td><span class="status">'+(labels[o.status]||o.status)+'</span></td><td><select onchange="setStatus(\''+o.id+'\',this.value)">'+Object.entries(labels).map(([k,v])=>'<option value="'+k+'" '+(k===o.status?'selected':'')+'>'+v+'</option>').join('')+'</select></td></tr>').join('')}
+async function setStatus(id,status){const {error}=await sb.from('orders').update({status}).eq('id',id);if(error)alert(error.message);else{await sb.from('order_status_history').insert({order_id:id,status,note:labels[status]||status,changed_by:session.user.id});loadDashboard()}}
+const purposes=[['product_images','صور المنتجات'],['product_videos','فيديو المنتجات'],['boxes','العلب'],['reviews','التقييمات'],['archive','الأرشيف'],['logs','السجلات'],['orders','إشعارات الطلبات']];
+async function loadIntegrations(){const r=await fetch(URL+'/functions/v1/admin-integrations',{headers:{Authorization:'Bearer '+session.access_token,apikey:KEY}});if(!r.ok)return;const j=await r.json();botState.textContent=j.bot_configured?'البوت مربوط':'البوت غير مربوط';channels.innerHTML=purposes.map(([k,n])=>{const c=(j.channels||[]).find(x=>x.purpose===k)||{};return '<div class="field"><label>'+n+'</label><input data-purpose="'+k+'" value="'+(c.channel_id||'')+'" placeholder="-100xxxxxxxxxx"/></div>'}).join('')}
+async function saveIntegrations(){const ch=[...channels.querySelectorAll('input')].map(i=>({purpose:i.dataset.purpose,channel_id:i.value.trim(),enabled:!!i.value.trim()}));const body={channels:ch};if(botToken.value.trim())body.telegram_bot_token=botToken.value.trim();const r=await fetch(URL+'/functions/v1/admin-integrations',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});alert(r.ok?'تم حفظ الربط':'تعذر حفظ الربط');botToken.value='';loadIntegrations()}
+async function loadSettings(){const {data}=await sb.from('app_settings').select('key,value').in('key',['onesignal','delivery']);oneSignalId.value=(data||[]).find(x=>x.key==='onesignal')?.value?.app_id||'';deliveryFee.value=(data||[]).find(x=>x.key==='delivery')?.value?.default_fee||0}
+async function saveSettings(){const rows=[{key:'onesignal',value:{app_id:oneSignalId.value.trim()},is_public:true},{key:'delivery',value:{default_fee:Number(deliveryFee.value||0),enabled:true},is_public:true}];const {error}=await sb.from('app_settings').upsert(rows);alert(error?error.message:'تم الحفظ')}
+</script></body></html>
