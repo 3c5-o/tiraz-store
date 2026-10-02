@@ -19,7 +19,7 @@
 <div class="main" id="mainApp">
 <header class="top"><div class="brand"><b>طِراز</b><small>ADMIN PANEL</small></div><button class="logout" onclick="logout()">خروج</button></header>
 <div class="tabs">
-<button class="tab active" data-tab="dashboard">الرئيسية</button><button class="tab" data-tab="products">المنتجات</button><button class="tab" data-tab="orders">الطلبات</button><button class="tab" data-tab="inventory">المخزون</button><button class="tab" data-tab="integrations">الربط والتخزين</button><button class="tab" data-tab="settings">الإعدادات</button>
+<button class="tab active" data-tab="dashboard">الرئيسية</button><button class="tab" data-tab="products">المنتجات</button><button class="tab" data-tab="orders">الطلبات</button><button class="tab" data-tab="inventory">المخزون</button><button class="tab" data-tab="boxes">العلب</button><button class="tab" data-tab="integrations">الربط والتخزين</button><button class="tab" data-tab="settings">الإعدادات</button>
 </div>
 <div class="content">
 <section class="panel active" id="dashboardPanel"><div class="grid"><div class="stat">المنتجات<b id="sProducts">0</b></div><div class="stat">الطلبات الجديدة<b id="sOrders">0</b></div><div class="stat">مخزون منخفض<b id="sLow">0</b></div><div class="stat">المبيعات<b id="sSales">0 د.ع</b></div></div><div class="card"><h3>آخر الطلبات</h3><div id="recentOrders"></div></div></section>
@@ -41,6 +41,20 @@
 <section class="panel" id="ordersPanel"><div class="row"><h2>الطلبات</h2><button class="secondary" onclick="loadOrders()">تحديث</button></div><div class="table card"><table><thead><tr><th>الطلب</th><th>الزبون</th><th>الهاتف</th><th>الإجمالي</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="ordersBody"></tbody></table></div></section>
 
 <section class="panel" id="inventoryPanel"><h2>المخزون</h2><div id="inventoryList"></div></section>
+
+<section class="panel" id="boxesPanel">
+  <div class="row"><h2>العلب والإضافات</h2><button class="primary" onclick="toggleBoxForm()">إضافة علبة</button></div>
+  <div class="card" id="boxForm" style="display:none">
+    <div class="forms">
+      <div class="field"><label>اسم العلبة</label><input id="boxName" placeholder="علبة عادية"></div>
+      <div class="field"><label>السعر (د.ع)</label><input id="boxPrice" type="number" value="0"></div>
+      <div class="field"><label>المخزون</label><input id="boxStock" type="number" value="0"></div>
+      <div class="field uploadbox"><label>صورة العلبة - اختياري</label><input id="boxFile" type="file" accept="image/*"></div>
+    </div>
+    <button class="primary" onclick="createBox()">حفظ العلبة</button>
+  </div>
+  <div id="boxesList"></div>
+</section>
 
 <section class="panel" id="integrationsPanel"><h2>الربط والتخزين</h2><div class="notice">Telegram يستخدم لتخزين الوسائط فقط. الأسعار والطلبات والمخزون تبقى في قاعدة البيانات.</div><div class="card">
 <div class="field"><label>Bot Token</label><input id="botToken" type="password" placeholder="أدخل التوكن عند التغيير فقط"/></div>
@@ -123,7 +137,7 @@ sb.auth.getSession().then(({data})=>{if(data.session)enter(data.session)});
 
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab+'Panel').classList.add('active')});
 function slugify(s){return s.toLowerCase().trim().replace(/\s+/g,'-').replace(/[^\p{L}\p{N}-]+/gu,'')+'-'+Date.now().toString(36)}
-async function init(){const {data:c}=await sb.from('categories').select('*').order('sort_order');categories=c||[];pCategory.innerHTML=categories.map(x=>'<option value="'+x.id+'">'+x.name_ar+'</option>').join('');await Promise.all([loadDashboard(),loadProducts(),loadOrders(),loadInventory(),loadIntegrations(),loadSettings()]);lucide.createIcons()}
+async function init(){const {data:c}=await sb.from('categories').select('*').order('sort_order');categories=c||[];pCategory.innerHTML=categories.map(x=>'<option value="'+x.id+'">'+x.name_ar+'</option>').join('');await Promise.all([loadDashboard(),loadProducts(),loadOrders(),loadInventory(),loadBoxes(),loadIntegrations(),loadSettings()]);lucide.createIcons()}
 async function loadDashboard(){const [{count:pc},{count:oc},{data:low},{data:sales}]=await Promise.all([sb.from('products').select('*',{count:'exact',head:true}),sb.from('orders').select('*',{count:'exact',head:true}).eq('status','new'),sb.from('product_variants').select('id,stock,low_stock_limit').eq('active',true),sb.from('orders').select('total').eq('status','delivered')]);sProducts.textContent=pc||0;sOrders.textContent=oc||0;sLow.textContent=(low||[]).filter(x=>x.stock<=x.low_stock_limit).length;sSales.textContent=money((sales||[]).reduce((s,x)=>s+Number(x.total),0));const {data:r}=await sb.from('orders').select('order_number,customer_name,total,status').order('created_at',{ascending:false}).limit(5);recentOrders.innerHTML=(r||[]).map(x=>'<div class="row" style="padding:9px 0;border-bottom:1px solid var(--line)"><span><b>'+x.order_number+'</b><br><small>'+x.customer_name+'</small></span><span>'+money(x.total)+'</span></div>').join('')||'<div class="small">لا توجد طلبات بعد.</div>'}
 function toggleProductForm(){productForm.style.display=productForm.style.display==='none'?'block':'none'}
 async function ensureBrand(name){if(!name.trim())return null;const slug=slugify(name).replace(/-[^-]+$/,'');let {data}=await sb.from('brands').select('id').eq('name',name.trim()).maybeSingle();if(data)return data.id;const r=await sb.from('brands').insert({name:name.trim(),slug}).select('id').single();return r.data?.id||null}
@@ -137,6 +151,25 @@ async function createProduct(){
 async function uploadMedia(file,purpose,productId,variantId){const fd=new FormData();fd.append('file',file);fd.append('purpose',purpose);fd.append('product_id',productId);fd.append('variant_id',variantId||'');const r=await fetch(URL+'/functions/v1/telegram-upload',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,apikey:KEY},body:fd});if(!r.ok){const j=await r.json().catch(()=>({}));alert('تعذر رفع '+file.name+': '+(j.error||r.status))}}
 async function loadProducts(){const {data}=await sb.from('products').select('id,name_ar,base_price,published,brand:brands(name),product_variants(id,name_ar,stock)').order('created_at',{ascending:false});productsList.innerHTML=(data||[]).map(p=>'<div class="card row"><div><b>'+p.name_ar+'</b><div class="small">'+(p.brand?.name||'')+' — '+money(p.base_price)+'</div></div><div><span class="status">'+(p.published?'منشور':'مخفي')+'</span></div></div>').join('')||'<div class="card small">لا توجد منتجات.</div>'}
 async function loadInventory(){const {data}=await sb.from('product_variants').select('id,name_ar,stock,low_stock_limit,product:products(name_ar)').order('stock');inventoryList.innerHTML=(data||[]).map(v=>'<div class="card row"><div><b>'+v.product?.name_ar+'</b><div class="small">'+v.name_ar+'</div></div><b class="'+(v.stock<=v.low_stock_limit?'danger':'')+'">'+v.stock+'</b></div>').join('')||'<div class="card small">لا يوجد مخزون بعد.</div>'}
+function toggleBoxForm(){boxForm.style.display=boxForm.style.display==='none'?'block':'none'}
+async function loadBoxes(){
+  const {data}=await sb.from('boxes').select('id,name_ar,price,stock,active,proxy_key').order('created_at');
+  boxesList.innerHTML=(data||[]).map(b=>'<div class="card row"><div><b>'+b.name_ar+'</b><div class="small">'+money(b.price)+' • المخزون '+b.stock+'</div></div><div style="display:flex;gap:6px"><button class="secondary" onclick="toggleBox(\''+b.id+'\','+(!b.active)+')">'+(b.active?'إخفاء':'تفعيل')+'</button><button class="secondary danger" onclick="deleteBox(\''+b.id+'\')">حذف</button></div></div>').join('')||'<div class="card small">لا توجد علب بعد.</div>'
+}
+async function createBox(){
+  if(!boxName.value.trim())return alert('أدخل اسم العلبة');
+  const {data:b,error}=await sb.from('boxes').insert({name_ar:boxName.value.trim(),price:Number(boxPrice.value||0),stock:Number(boxStock.value||0),active:true}).select('*').single();
+  if(error)return alert(error.message);
+  const file=boxFile.files?.[0];
+  if(file){
+    const fd=new FormData();fd.append('file',file);fd.append('purpose','boxes');fd.append('entity_type','box');fd.append('box_id',b.id);
+    const r=await fetch(URL+'/functions/v1/telegram-upload',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,apikey:KEY},body:fd});
+    if(!r.ok){const j=await r.json().catch(()=>({}));alert('تم حفظ العلبة لكن تعذر رفع الصورة: '+(j.error||r.status))}
+  }
+  boxName.value='';boxPrice.value='0';boxStock.value='0';boxFile.value='';boxForm.style.display='none';await loadBoxes()
+}
+async function toggleBox(id,active){const {error}=await sb.from('boxes').update({active}).eq('id',id);if(error)alert(error.message);else loadBoxes()}
+async function deleteBox(id){if(!confirm('حذف العلبة؟'))return;const {error}=await sb.from('boxes').delete().eq('id',id);if(error)alert(error.message);else loadBoxes()}
 const labels={new:'جديد',confirmed:'مؤكد',preparing:'تجهيز',shipped:'مشحون',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض'};
 async function loadOrders(){
   const {data}=await sb.from('orders').select('*').order('created_at',{ascending:false});
