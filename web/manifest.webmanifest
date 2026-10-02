@@ -1,0 +1,11 @@
+{
+  "name": "طِراز | TIRAZ.SELECT",
+  "short_name": "طِراز",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4efe7",
+  "theme_color": "#17100d",
+  "icons": []
+}
