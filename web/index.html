@@ -241,9 +241,24 @@ async function placeOrder(){
   const customer={customer_name:coName.value.trim(),phone:coPhone.value.trim(),alt_phone:coAlt.value.trim(),province:coProvince.value.trim(),area:coArea.value.trim(),landmark:coLandmark.value.trim(),address:coAddress.value.trim()};
   if(!customer.customer_name||!customer.phone||!customer.province||!customer.area){toast('أكمل الحقول المطلوبة');btn.disabled=false;btn.textContent='تأكيد الطلب';return}
   const items=cart.map(x=>({product_id:x.product_id,variant_id:x.variant_id,quantity:x.quantity}));
-  const {data,error}=await sb.rpc('create_order',{p_customer:customer,p_items:items,p_notes:coNotes.value.trim()||null});
+  const response=await fetch(SUPABASE_URL+'/functions/v1/create-order',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',apikey:SUPABASE_KEY},
+    body:JSON.stringify({customer,items,notes:coNotes.value.trim()||null})
+  });
+  const data=await response.json().catch(()=>({}));
   btn.disabled=false;btn.textContent='تأكيد الطلب';
-  if(error){console.error(error);toast('تعذر إنشاء الطلب');return}
+  if(!response.ok||!data.ok){
+    const labels={
+      'Insufficient stock':'الكمية المطلوبة غير متوفرة حالياً',
+      'Too many recent orders':'تم إرسال عدة طلبات خلال وقت قصير، حاول لاحقاً',
+      'Invalid phone':'تحقق من رقم الهاتف',
+      'Product unavailable':'أحد المنتجات لم يعد متوفراً',
+      'Variant unavailable':'الخيار المحدد لم يعد متوفراً'
+    };
+    toast(labels[data.error]||'تعذر إنشاء الطلب');
+    return;
+  }
   cart=[];saveLocal();closeModal('checkoutModal');
   alert('تم استلام طلبك بنجاح\nرقم الطلب: '+data.order_number+'\nالإجمالي: '+money(data.total));
   goView('profile');trackNumber.value=data.order_number;trackPhone.value=customer.phone;
