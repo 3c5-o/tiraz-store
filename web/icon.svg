@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="g" cx="35%" cy="25%" r="80%">
+      <stop offset="0%" stop-color="#4b3328"/>
+      <stop offset="100%" stop-color="#17100d"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" x2="1">
+      <stop offset="0%" stop-color="#e2c58d"/>
+      <stop offset="100%" stop-color="#a47c42"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#g)"/>
+  <circle cx="256" cy="256" r="190" fill="none" stroke="url(#gold)" stroke-width="8"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#b99558" stroke-opacity=".35" stroke-width="2"/>
+  <text x="256" y="270" text-anchor="middle" font-family="Tahoma, Arial, sans-serif" font-size="132" font-weight="700" fill="url(#gold)">طِراز</text>
+  <text x="256" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" letter-spacing="5" fill="#d9bf8a">TIRAZ</text>
+</svg>
