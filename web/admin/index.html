@@ -44,10 +44,31 @@
 
 <section class="panel" id="integrationsPanel"><h2>الربط والتخزين</h2><div class="notice">Telegram يستخدم لتخزين الوسائط فقط. الأسعار والطلبات والمخزون تبقى في قاعدة البيانات.</div><div class="card">
 <div class="field"><label>Bot Token</label><input id="botToken" type="password" placeholder="أدخل التوكن عند التغيير فقط"/></div>
-<div id="channels"></div><button class="primary" onclick="saveIntegrations()">حفظ الربط</button><span id="botState" class="small"></span>
+<div class="field"><label>OneSignal REST API Key</label><input id="oneSignalRestKey" type="password" placeholder="أدخل المفتاح عند التغيير فقط"/></div>
+<div id="channels"></div>
+<div class="row">
+  <button class="primary" onclick="saveIntegrations()">حفظ الربط</button>
+  <button class="secondary" onclick="testTelegram()">اختبار Telegram</button>
+</div>
+<div id="integrationState" class="small" style="margin-top:10px"></div>
 </div></section>
 
-<section class="panel" id="settingsPanel"><h2>إعدادات المتجر</h2><div class="card"><div class="field"><label>OneSignal App ID</label><input id="oneSignalId" placeholder="اختياري حالياً"/></div><div class="field"><label>سعر التوصيل الافتراضي (د.ع)</label><input id="deliveryFee" type="number" value="0"/></div><button class="primary" onclick="saveSettings()">حفظ</button></div></section>
+<section class="panel" id="settingsPanel">
+  <h2>إعدادات المتجر</h2>
+  <div class="card">
+    <div class="field"><label>OneSignal App ID</label><input id="oneSignalId" placeholder="App ID"/></div>
+    <div class="field"><label>سعر التوصيل الافتراضي (د.ع)</label><input id="deliveryFee" type="number" value="0"/></div>
+    <button class="primary" onclick="saveSettings()">حفظ الإعدادات</button>
+  </div>
+  <div class="card">
+    <h3>إرسال إشعار</h3>
+    <div class="field"><label>العنوان</label><input id="notifyTitle" placeholder="وصل جديد من طِراز"/></div>
+    <div class="field"><label>النص</label><textarea id="notifyMessage" rows="3" placeholder="اكتب نص الإشعار"></textarea></div>
+    <div class="field"><label>رابط عند الضغط - اختياري</label><input id="notifyUrl" placeholder="https://..."/></div>
+    <button class="primary" onclick="sendNotification()">إرسال للجميع</button>
+    <div id="notifyState" class="small" style="margin-top:8px"></div>
+  </div>
+</section>
 </div></div>
 
 <script>
@@ -101,8 +122,48 @@ const labels={new:'جديد',confirmed:'مؤكد',preparing:'تجهيز',shipped
 async function loadOrders(){const {data}=await sb.from('orders').select('*').order('created_at',{ascending:false});ordersBody.innerHTML=(data||[]).map(o=>'<tr><td><b>'+o.order_number+'</b><br><small>'+new Date(o.created_at).toLocaleString('ar-IQ')+'</small></td><td>'+o.customer_name+'<br><small>'+o.province+' / '+o.area+'</small></td><td>'+o.phone+'</td><td>'+money(o.total)+'</td><td><span class="status">'+(labels[o.status]||o.status)+'</span></td><td><select onchange="setStatus(\''+o.id+'\',this.value)">'+Object.entries(labels).map(([k,v])=>'<option value="'+k+'" '+(k===o.status?'selected':'')+'>'+v+'</option>').join('')+'</select></td></tr>').join('')}
 async function setStatus(id,status){const {error}=await sb.from('orders').update({status}).eq('id',id);if(error)alert(error.message);else{await sb.from('order_status_history').insert({order_id:id,status,note:labels[status]||status,changed_by:session.user.id});loadDashboard()}}
 const purposes=[['product_images','صور المنتجات'],['product_videos','فيديو المنتجات'],['boxes','العلب'],['reviews','التقييمات'],['archive','الأرشيف'],['logs','السجلات'],['orders','إشعارات الطلبات']];
-async function loadIntegrations(){const r=await fetch(URL+'/functions/v1/admin-integrations',{headers:{Authorization:'Bearer '+session.access_token,apikey:KEY}});if(!r.ok)return;const j=await r.json();botState.textContent=j.bot_configured?'البوت مربوط':'البوت غير مربوط';channels.innerHTML=purposes.map(([k,n])=>{const c=(j.channels||[]).find(x=>x.purpose===k)||{};return '<div class="field"><label>'+n+'</label><input data-purpose="'+k+'" value="'+(c.channel_id||'')+'" placeholder="-100xxxxxxxxxx"/></div>'}).join('')}
-async function saveIntegrations(){const ch=[...channels.querySelectorAll('input')].map(i=>({purpose:i.dataset.purpose,channel_id:i.value.trim(),enabled:!!i.value.trim()}));const body={channels:ch};if(botToken.value.trim())body.telegram_bot_token=botToken.value.trim();const r=await fetch(URL+'/functions/v1/admin-integrations',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});alert(r.ok?'تم حفظ الربط':'تعذر حفظ الربط');botToken.value='';loadIntegrations()}
+async function loadIntegrations(){
+  const r=await fetch(URL+'/functions/v1/admin-integrations',{headers:{Authorization:'Bearer '+session.access_token,apikey:KEY}});
+  if(!r.ok)return;
+  const j=await r.json();
+  integrationState.textContent=(j.bot_configured?'Telegram مربوط':'Telegram غير مربوط')+' • '+(j.onesignal_key_configured?'OneSignal Key محفوظ':'OneSignal Key غير محفوظ');
+  channels.innerHTML=purposes.map(([k,n])=>{const c=(j.channels||[]).find(x=>x.purpose===k)||{};return '<div class="field"><label>'+n+'</label><input data-purpose="'+k+'" value="'+(c.channel_id||'')+'" placeholder="-100xxxxxxxxxx"/></div>'}).join('')
+}
+async function saveIntegrations(){
+  const ch=[...channels.querySelectorAll('input')].map(i=>({purpose:i.dataset.purpose,channel_id:i.value.trim(),enabled:!!i.value.trim()}));
+  const body={channels:ch};
+  if(botToken.value.trim())body.telegram_bot_token=botToken.value.trim();
+  if(oneSignalRestKey.value.trim())body.onesignal_rest_key=oneSignalRestKey.value.trim();
+  const r=await fetch(URL+'/functions/v1/admin-integrations',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  alert(r.ok?'تم حفظ الربط':'تعذر حفظ الربط');
+  botToken.value='';oneSignalRestKey.value='';
+  loadIntegrations()
+}
+async function testTelegram(){
+  integrationState.textContent='جاري الاختبار...';
+  const r=await fetch(URL+'/functions/v1/admin-integrations',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({action:'test_telegram'})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){integrationState.textContent='فشل الاختبار: '+(j.error||r.status);return}
+  const ok=(j.channels||[]).filter(x=>x.ok).length,total=(j.channels||[]).length;
+  integrationState.textContent='@'+(j.bot_username||'bot')+' متصل • القنوات '+ok+'/'+total;
+}
 async function loadSettings(){const {data}=await sb.from('app_settings').select('key,value').in('key',['onesignal','delivery']);oneSignalId.value=(data||[]).find(x=>x.key==='onesignal')?.value?.app_id||'';deliveryFee.value=(data||[]).find(x=>x.key==='delivery')?.value?.default_fee||0}
-async function saveSettings(){const rows=[{key:'onesignal',value:{app_id:oneSignalId.value.trim()},is_public:true},{key:'delivery',value:{default_fee:Number(deliveryFee.value||0),enabled:true},is_public:true}];const {error}=await sb.from('app_settings').upsert(rows);alert(error?error.message:'تم الحفظ')}
+async function saveSettings(){
+  const rows=[
+    {key:'onesignal',value:{app_id:oneSignalId.value.trim()},is_public:true},
+    {key:'delivery',value:{default_fee:Number(deliveryFee.value||0),enabled:true},is_public:true}
+  ];
+  const {error}=await sb.from('app_settings').upsert(rows);
+  alert(error?error.message:'تم الحفظ')
+}
+async function sendNotification(){
+  notifyState.textContent='جاري الإرسال...';
+  const r=await fetch(URL+'/functions/v1/send-notification',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+session.access_token,apikey:KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({title:notifyTitle.value.trim(),message:notifyMessage.value.trim(),url:notifyUrl.value.trim()})
+  });
+  const j=await r.json().catch(()=>({}));
+  notifyState.textContent=r.ok?'تم إرسال الإشعار بنجاح':'تعذر الإرسال: '+(j.error||r.status)
+}
 </script></body></html>
