@@ -3,8 +3,10 @@
   <uses-permission android:name="android.permission.INTERNET"/>
   <application
       android:theme="@style/AppTheme"
-      android:label="طِراز Admin"
-      android:usesCleartextTraffic="false">
+      android:label="إدارة طراز"
+      android:usesCleartextTraffic="false"
+      android:icon="@drawable/ic_tiraz_admin"
+      android:roundIcon="@drawable/ic_tiraz_admin">
     <activity
         android:name=".MainActivity"
         android:screenOrientation="portrait"
