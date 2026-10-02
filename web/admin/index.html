@@ -11,7 +11,8 @@
   <div class="field"><label>البريد</label><input id="email" type="email"/></div>
   <div class="field"><label>كلمة المرور</label><input id="password" type="password"/></div>
   <button class="primary" style="width:100%" onclick="login()">تسجيل الدخول</button>
-  <p class="small">إذا كان هذا أول حساب إدارة، أنشئ الحساب من Supabase Auth ثم أضف UUID إلى admin_users.</p>
+  <button class="secondary" style="width:100%;margin-top:8px" onclick="registerOwner()">إنشاء أول حساب إدارة</button>
+  <p class="small">عند أول تشغيل فقط، أول حساب موثّق يمكنه تفعيل نفسه كمالك للنظام. بعد إنشاء المالك يتوقف هذا التفعيل تلقائياً.</p>
   <div id="loginMsg" class="small"></div>
 </div>
 
@@ -53,7 +54,30 @@
 const URL='https://pivvmyvbgjdhphlsdttw.supabase.co',KEY='sb_publishable_31bVKfX7nE9nFrMY-LZtnw_JVTcMmDY';const sb=supabase.createClient(URL,KEY);let session=null,categories=[];
 const money=v=>new Intl.NumberFormat('ar-IQ').format(Number(v||0))+' د.ع';
 async function login(){loginMsg.textContent='جاري الدخول...';const {data,error}=await sb.auth.signInWithPassword({email:email.value,password:password.value});if(error){loginMsg.textContent=error.message;return}await enter(data.session)}
-async function enter(s){session=s;const {data:a}=await sb.from('admin_users').select('role,active').eq('user_id',s.user.id).eq('active',true).maybeSingle();if(!a){loginMsg.innerHTML='هذا الحساب غير مفعّل كإدارة.<br>UUID: <b>'+s.user.id+'</b>';await sb.auth.signOut();return}loginScreen.style.display='none';mainApp.style.display='block';await init()}
+async function registerOwner(){
+  loginMsg.textContent='جاري إنشاء الحساب...';
+  const {data,error}=await sb.auth.signUp({email:email.value,password:password.value});
+  if(error){loginMsg.textContent=error.message;return}
+  if(!data.session){loginMsg.textContent='تم إنشاء الحساب. أكّد البريد ثم سجّل الدخول.';return}
+  await enter(data.session,true);
+}
+async function enter(s,tryClaim=false){
+  session=s;
+  let {data:a}=await sb.from('admin_users').select('role,active').eq('user_id',s.user.id).eq('active',true).maybeSingle();
+  if(!a && tryClaim){
+    const claim=await sb.rpc('claim_first_owner');
+    if(!claim.error && claim.data){
+      const r=await sb.from('admin_users').select('role,active').eq('user_id',s.user.id).eq('active',true).maybeSingle();
+      a=r.data;
+    }
+  }
+  if(!a){
+    loginMsg.innerHTML='هذا الحساب غير مفعّل كإدارة.';
+    await sb.auth.signOut();
+    return;
+  }
+  loginScreen.style.display='none';mainApp.style.display='block';await init()
+}
 async function logout(){await sb.auth.signOut();location.reload()}
 sb.auth.getSession().then(({data})=>{if(data.session)enter(data.session)});
 
