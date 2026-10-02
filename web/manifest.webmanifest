@@ -4,8 +4,17 @@
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f4efe7",
   "theme_color": "#17100d",
-  "icons": []
+  "description": "متجر طِراز للساعات والنظارات الرجالية والنسائية",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
