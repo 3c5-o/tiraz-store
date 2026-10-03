@@ -7,6 +7,7 @@ on:
       - "web/**"
       - "android-admin/**"
       - ".github/workflows/pages.yml"
+      - "scripts/**"
   workflow_dispatch:
 
 permissions:
@@ -37,14 +38,10 @@ jobs:
         with:
           gradle-version: "8.10.2"
 
-      - name: Build hybrid admin APK
-        working-directory: android-admin
-        run: gradle :app:assembleDebug
-
-      - name: Add APK to website downloads
+      - name: Validate website
         run: |
-          mkdir -p web/downloads
-          cp android-admin/app/build/outputs/apk/debug/app-debug.apk web/downloads/tiraz-admin.apk
+          python3 scripts/assemble.py
+          node --test tests/frontend.test.cjs
 
       - uses: actions/configure-pages@v5
         with:

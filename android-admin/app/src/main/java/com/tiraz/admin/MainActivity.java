@@ -1,6 +1,8 @@
 package com.tiraz.admin;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.webkit.JsResult;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -14,6 +16,11 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.JavascriptInterface;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.print.PrintManager;
+import android.os.SystemClock;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -29,6 +36,7 @@ public class MainActivity extends Activity {
   private WebView web;
   private View loadingView;
   private ValueCallback<Uri[]> filePathCallback;
+  private long lastBack;
   private static final int FILE_CHOOSER = 1001;
   private static final String BASE_URL = "https://3c5-o.github.io/tiraz-store/admin/";
 
@@ -37,6 +45,11 @@ public class MainActivity extends Activity {
     super.onCreate(state);
 
     FrameLayout root = new FrameLayout(this);
+    root.setFitsSystemWindows(true);
+    root.setOnApplyWindowInsetsListener((view,insets)->{
+      view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
+      return insets.consumeSystemWindowInsets();
+    });
 
     web = new WebView(this);
     root.addView(web, new FrameLayout.LayoutParams(
@@ -91,7 +104,7 @@ public class MainActivity extends Activity {
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
     settings.setDatabaseEnabled(true);
-    settings.setAllowFileAccess(true);
+    settings.setAllowFileAccess(false);
     settings.setAllowContentAccess(true);
     settings.setMediaPlaybackRequiresUserGesture(false);
     settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
@@ -103,6 +116,7 @@ public class MainActivity extends Activity {
 
     web.clearCache(true);
     web.clearHistory();
+    web.addJavascriptInterface(new NativeBridge(), "TirazNative");
 
     web.setWebViewClient(new WebViewClient() {
       @Override
@@ -111,8 +125,7 @@ public class MainActivity extends Activity {
         String host = uri.getHost();
 
         if (host != null && (
-            host.equals("3c5-o.github.io") ||
-            host.endsWith("supabase.co")
+            host.equals("3c5-o.github.io") && uri.getPath().startsWith("/tiraz-store/admin/")
         )) {
           return false;
         }
@@ -150,6 +163,19 @@ public class MainActivity extends Activity {
     });
 
     web.setWebChromeClient(new WebChromeClient() {
+      @Override public boolean onJsConfirm(WebView view,String url,String message,JsResult result) {
+        new AlertDialog.Builder(MainActivity.this).setTitle("طراز").setMessage(message)
+          .setPositiveButton("تأكيد",(dialog,which)->result.confirm())
+          .setNegativeButton("إلغاء",(dialog,which)->result.cancel())
+          .setOnCancelListener(dialog->result.cancel()).show();
+        return true;
+      }
+      @Override public boolean onJsAlert(WebView view,String url,String message,JsResult result) {
+        new AlertDialog.Builder(MainActivity.this).setTitle("طراز").setMessage(message)
+          .setPositiveButton("حسناً",(dialog,which)->result.confirm())
+          .setOnCancelListener(dialog->result.confirm()).show();
+        return true;
+      }
       @Override
       public boolean onShowFileChooser(
           WebView webView,
@@ -175,6 +201,21 @@ public class MainActivity extends Activity {
     });
 
     loadBundledAdmin();
+  }
+
+  public class NativeBridge {
+    @JavascriptInterface public void copy(String text) {
+      runOnUiThread(()->{
+        ClipboardManager manager=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+        manager.setPrimaryClip(ClipData.newPlainText("طراز",text));
+      });
+    }
+    @JavascriptInterface public void printOrder() {
+      runOnUiThread(()->{
+        PrintManager manager=(PrintManager)getSystemService(PRINT_SERVICE);
+        manager.print("طلب طراز",web.createPrintDocumentAdapter("طلب طراز"),null);
+      });
+    }
   }
 
   private void loadBundledAdmin() {
@@ -221,10 +262,13 @@ public class MainActivity extends Activity {
 
   @Override
   public void onBackPressed() {
-    if (web != null && web.canGoBack()) {
-      web.goBack();
-    } else {
-      super.onBackPressed();
-    }
+    if(web==null){super.onBackPressed();return;}
+    web.evaluateJavascript("window.tirazBack ? window.tirazBack() : false",result->{
+      if("true".equals(result))return;
+      long now=SystemClock.elapsedRealtime();
+      if(now-lastBack<2000){finish();return;}
+      lastBack=now;
+      Toast.makeText(MainActivity.this,"اضغط الرجوع مرة ثانية للخروج",Toast.LENGTH_SHORT).show();
+    });
   }
 }

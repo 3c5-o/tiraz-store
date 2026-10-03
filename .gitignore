@@ -1,0 +1,7 @@
+android-admin/.gradle/
+android-admin/**/build/
+*.jks
+*.keystore
+signing-private/
+*.apk
+node_modules/
