@@ -3,12 +3,16 @@ do $$
 declare owner_id uuid;pid uuid;vid uuid;bid uuid;request uuid:=gen_random_uuid();customer jsonb;items jsonb;a jsonb;b jsonb;v_stock int;begin
 select user_id into owner_id from public.admin_users where role='owner' and active limit 1;
 perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);
-pid:=public.save_product(jsonb_build_object('name_ar','اختبار آلي مؤقت','base_price',1000,'category_id',(select id from categories limit 1),'gender','unisex','style','modern'),jsonb_build_array(jsonb_build_object('name_ar','فضي','stock',5,'active',true)));
+pid:=public.save_product(jsonb_build_object('name_ar','اختبار آلي مؤقت','base_price',1000,'category_id',(select id from categories limit 1),'gender','unisex','style','modern'),jsonb_build_array(jsonb_build_object('name_ar','فضي','stock',5,'active',true,'price_override','')));
 select id into vid from product_variants where product_id=pid;
+perform public.save_product(jsonb_build_object('id',pid,'name_ar','اختبار معدل','base_price',1000,'category_id',(select id from categories limit 1),'gender','unisex','style','modern'),jsonb_build_array(jsonb_build_object('id',vid,'name_ar','فضي','stock',5,'expected_stock',5,'active',true,'price_override','')));
+if (select count(*) from product_variants where product_id=pid)<>1 then raise exception 'Product edit duplicated variants';end if;
 update products set published=true where id=pid;
 bid:=public.save_box(jsonb_build_object('name_ar','علبة اختبار','price',100,'stock',5,'active',true));
 customer:=jsonb_build_object('customer_name','اختبار مؤقت','phone','07701234567','province','بغداد','area','اختبار','_request_id',request,'_user_id',owner_id);
 items:=jsonb_build_array(jsonb_build_object('product_id',pid,'variant_id',vid,'box_id',bid,'quantity',2));
+begin perform public.create_order(customer||jsonb_build_object('_expected_total',1),items);raise exception 'Unexpected checkout price regression';exception when others then if sqlerrm<>'Price changed' then raise;end if;end;
+if (select stock from product_variants where id=vid)<>5 or (select stock from boxes where id=bid)<>5 then raise exception 'Price mismatch reservation regression';end if;
 a:=public.create_order(customer,items);b:=public.create_order(customer,items);
 if a->>'order_id'<>b->>'order_id' then raise exception 'Duplicate order regression';end if;
 select stock into v_stock from product_variants where id=vid;

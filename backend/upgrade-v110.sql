@@ -79,6 +79,7 @@ declare o orders; item jsonb; p products; v product_variants; b boxes; qty int; 
  insert into order_items(order_id,product_id,variant_id,product_name_snapshot,variant_name_snapshot,unit_price,quantity,box_id,box_name_snapshot,box_price_snapshot,line_total) values(o.id,p.id,v.id,p.name_ar,v.name_ar,coalesce(v.price_override,p.base_price),qty,b.id,b.name_ar,coalesce(b.price,0),(coalesce(v.price_override,p.base_price)+coalesce(b.price,0))*qty);
  v_subtotal:=v_subtotal+coalesce(v.price_override,p.base_price)*qty;v_extras:=v_extras+coalesce(b.price,0)*qty;
  end loop;
+ if nullif(p_customer->>'_expected_total','') is not null and (p_customer->>'_expected_total')::bigint<>v_subtotal+v_extras+o.delivery_fee-o.discount then raise exception 'Price changed';end if;
  update orders set subtotal=v_subtotal,extras=v_extras,total=v_subtotal+v_extras+delivery_fee-discount where id=o.id returning * into o;
  insert into order_status_history(order_id,status,note) values(o.id,'new','تم استلام الطلب');
  insert into notification_outbox(order_id,kind) values(o.id,'telegram_order'),(o.id,'admin_push') on conflict do nothing;
@@ -125,7 +126,7 @@ declare v_product_id uuid; v_brand_id uuid; item jsonb; vid uuid; oldv product_v
  update products set name_ar=trim(p_data->>'name_ar'),name_en=nullif(p_data->>'name_en',''),brand_id=v_brand_id,category_id=(p_data->>'category_id')::uuid,gender=p_data->>'gender',style=p_data->>'style',description_ar=p_data->>'description_ar',base_price=(p_data->>'base_price')::bigint,compare_at_price=nullif(p_data->>'compare_at_price','')::bigint,featured=coalesce((p_data->>'featured')::boolean,false) where id=v_product_id;
  end if;
  for item in select value from jsonb_array_elements(p_variants) loop
- if (item->>'stock')::int<0 or coalesce((item->>'price_override')::bigint,0)<0 then raise exception 'Invalid stock';end if;
+ if (item->>'stock')::int<0 or coalesce(nullif(item->>'price_override','')::bigint,0)<0 then raise exception 'Invalid stock';end if;
  vid:=nullif(item->>'id','')::uuid;
  if vid is null then insert into product_variants(product_id,name_ar,color,sku,stock,price_override,low_stock_limit,active) values(v_product_id,coalesce(nullif(item->>'name_ar',''),'الافتراضي'),item->>'name_ar',nullif(item->>'sku',''),(item->>'stock')::int,nullif(item->>'price_override','')::bigint,coalesce((item->>'low_stock_limit')::int,3),coalesce((item->>'active')::boolean,true));
  else select * into oldv from product_variants where id=vid and product_id=v_product_id for update;if not found then raise exception 'Variant unavailable';end if;

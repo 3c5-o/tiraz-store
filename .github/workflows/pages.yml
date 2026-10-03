@@ -3,11 +3,6 @@ name: Deploy Tiraz Store
 on:
   push:
     branches: [main]
-    paths:
-      - "web/**"
-      - "android-admin/**"
-      - ".github/workflows/pages.yml"
-      - "scripts/**"
   workflow_dispatch:
 
 permissions:
