@@ -1,0 +1,6 @@
+import {cors,json,db,identity,limit,body,failure} from './shared.ts';
+Deno.serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:cors});if(req.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);try{
+await limit(req,'order',20,600);const b=await body(req),user=await identity(req);if(!b.customer||!Array.isArray(b.items)||!(/^[0-9a-f-]{36}$/i.test(b.request_id||'')))return json({error:'INVALID_PAYLOAD'},400);
+const customer={...b.customer,_request_id:b.request_id,_user_id:user?.id||null,_push_alias:/^browser-[0-9a-f-]{36}$/i.test(b.push_alias||'')?b.push_alias:null};
+const {data,error}=await db().rpc('create_order',{p_customer:customer,p_items:b.items,p_notes:b.notes||null});if(error){const known=['Cart is empty','Missing required customer information','Input too long','Invalid phone','Too many recent orders','Product unavailable','Variant unavailable','Insufficient stock','Box unavailable','Invalid quantity','Request conflict'];throw new Error(known.find(x=>error.message.includes(x))||'ORDER_FAILED')}
+return json({ok:true,...data});}catch(e){return failure(e)}});

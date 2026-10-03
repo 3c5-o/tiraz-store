@@ -5,11 +5,17 @@ on:
     branches: [main]
     paths:
       - "android-admin/**"
+      - "web/admin/**"
+      - "web/assets/**"
+      - "scripts/**"
       - ".github/workflows/admin-apk.yml"
   pull_request:
     branches: [main]
     paths:
       - "android-admin/**"
+      - "web/admin/**"
+      - "web/assets/**"
+      - "scripts/**"
       - ".github/workflows/admin-apk.yml"
   workflow_dispatch:
 
@@ -31,11 +37,22 @@ jobs:
         with:
           gradle-version: "8.10.2"
 
-      - name: Build debug APK
+      - name: Validate interfaces
+        run: |
+          python3 scripts/assemble.py
+          node --test tests/frontend.test.cjs
+      - name: Build release APK
         working-directory: android-admin
-        run: gradle :app:assembleDebug
+        run: gradle :app:assembleRelease
+
+      - name: Include signing and verification tool
+        run: |
+          mkdir -p signing-tools
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" signing-tools/apksigner.jar
 
       - uses: actions/upload-artifact@v4
         with:
           name: tiraz-admin-apk
-          path: android-admin/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            android-admin/app/build/outputs/apk/release/app-release-unsigned.apk
+            signing-tools/apksigner.jar
