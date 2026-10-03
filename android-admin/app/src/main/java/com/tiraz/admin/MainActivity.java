@@ -1,6 +1,8 @@
 package com.tiraz.admin;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.webkit.JsResult;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -161,6 +163,19 @@ public class MainActivity extends Activity {
     });
 
     web.setWebChromeClient(new WebChromeClient() {
+      @Override public boolean onJsConfirm(WebView view,String url,String message,JsResult result) {
+        new AlertDialog.Builder(MainActivity.this).setTitle("طراز").setMessage(message)
+          .setPositiveButton("تأكيد",(dialog,which)->result.confirm())
+          .setNegativeButton("إلغاء",(dialog,which)->result.cancel())
+          .setOnCancelListener(dialog->result.cancel()).show();
+        return true;
+      }
+      @Override public boolean onJsAlert(WebView view,String url,String message,JsResult result) {
+        new AlertDialog.Builder(MainActivity.this).setTitle("طراز").setMessage(message)
+          .setPositiveButton("حسناً",(dialog,which)->result.confirm())
+          .setOnCancelListener(dialog->result.confirm()).show();
+        return true;
+      }
       @Override
       public boolean onShowFileChooser(
           WebView webView,
