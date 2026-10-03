@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -50,6 +51,22 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
+
+      - name: Wait for legacy Pages deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.build_type')" = legacy ]; then
+            for attempt in $(seq 1 30); do
+              status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=30" --jq '[.workflow_runs[] | select(.name == "pages build and deployment") | .status][0] // "missing"')
+              if [ "$status" = completed ]; then break; fi
+              sleep 10
+            done
+            if [ "$status" != completed ]; then
+              echo "Legacy deployment is still active; refusing to race it."
+              exit 1
+            fi
+          fi
 
       - name: Deploy
         id: deployment

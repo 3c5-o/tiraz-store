@@ -1,0 +1,12 @@
+drop policy if exists "public settings" on public.app_settings;
+create policy "public settings" on public.app_settings for select to anon,authenticated using(is_public);
+drop policy if exists "public banners" on public.banners;
+create policy "public banners" on public.banners for select to anon,authenticated using(active);
+drop policy if exists "public brands" on public.brands;
+create policy "public brands" on public.brands for select to anon,authenticated using(active);
+drop policy if exists "public categories" on public.categories;
+create policy "public categories" on public.categories for select to anon,authenticated using(active);
+drop policy if exists "public products" on public.products;
+create policy "public products" on public.products for select to anon,authenticated using(published);
+drop policy if exists "public variants" on public.product_variants;
+create policy "public variants" on public.product_variants for select to anon,authenticated using(active and exists(select 1 from public.products p where p.id=product_id and p.published));
